@@ -1,6 +1,6 @@
 """Flask application for unusual options activity tracker."""
 
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonify, redirect, send_from_directory, request
 import logging
 import time
 import threading
@@ -91,6 +91,9 @@ def get_options_data(period_days=1):
 @app.route("/")
 def index():
     """Serve the main HTML page."""
+    if IS_VERCEL:
+        # On Vercel, public/ is served via CDN — redirect to CDN-served file
+        return redirect("/index.html", code=307)
     return send_from_directory("public", "index.html")
 
 
