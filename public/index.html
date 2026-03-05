@@ -378,12 +378,43 @@
   }
   .empty-state p { margin-top: 8px; font-size: 14px; }
 
-  /* Responsive */
+  /* Responsive — tablets */
   @media (max-width: 768px) {
     .container { padding: 12px; }
     header { flex-direction: column; gap: 12px; align-items: flex-start; }
     header h1 { font-size: 18px; }
+    .header-meta { flex-wrap: wrap; gap: 10px; width: 100%; }
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .heatmap-grid { grid-template-columns: 1fr; }
+    .table-controls { gap: 8px; }
+    .sort-btn, .filter-btn { padding: 8px 12px; font-size: 13px; }
+    thead th { padding: 10px 10px; font-size: 10px; }
+    tbody td { padding: 8px 10px; font-size: 12px; }
+  }
+
+  /* Responsive — phones */
+  @media (max-width: 480px) {
+    .container { padding: 8px; }
+    header h1 { font-size: 16px; }
+    .header-meta { font-size: 12px; }
+    .period-btn { padding: 8px 14px; font-size: 13px; }
+    #refresh-btn { padding: 8px 14px; font-size: 13px; }
+    #timestamp { display: none; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-card { padding: 12px; }
+    .stat-card .value { font-size: 20px; }
+    .stat-card .label { font-size: 10px; }
+    .section-title { font-size: 14px; }
+    .heatmap-grid { grid-template-columns: 1fr; }
+    .exp-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+    .exp-cell { padding: 8px; }
+    .table-controls {
+      gap: 6px;
+    }
+    .table-controls > span[style] { display: none; }
+    .sort-btn, .filter-btn { padding: 7px 10px; font-size: 12px; }
+    thead th { padding: 8px 6px; font-size: 10px; letter-spacing: 0.3px; }
+    tbody td { padding: 8px 6px; font-size: 11px; }
   }
 </style>
 </head>
