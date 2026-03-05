@@ -32,3 +32,4 @@ data_snapshots/
 
 # Environment
 .env
+.claude
