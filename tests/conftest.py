@@ -110,35 +110,3 @@ def snapshot_file(temp_data_dir):
     return filename
 
 
-@pytest.fixture
-def mock_yfinance_data():
-    """Mock yfinance Ticker object with options data."""
-    class MockChain:
-        def __init__(self):
-            self.calls = self._make_df()
-            self.puts = self._make_df()
-
-        def _make_df(self):
-            import pandas as pd
-            return pd.DataFrame({
-                "strike": [190.0, 195.0, 200.0],
-                "lastPrice": [5.0, 2.5, 0.5],
-                "bid": [4.9, 2.4, 0.4],
-                "ask": [5.1, 2.6, 0.6],
-                "volume": [100, 200, 50],
-                "openInterest": [1000, 500, 200],
-                "impliedVolatility": [0.25, 0.30, 0.35],
-            })
-
-    class MockTicker:
-        def __init__(self):
-            self.options = ["2026-03-31", "2026-04-17"]
-            self.info = {
-                "regularMarketPrice": 195.34,
-                "previousClose": 195.00,
-            }
-
-        def option_chain(self, exp):
-            return MockChain()
-
-    return MockTicker()

@@ -17,3 +17,7 @@ CACHE_TTL = 300  # 5 minutes
 # Flask configuration
 FLASK_PORT = int(os.environ.get("FLASK_PORT", 5050))
 FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+
+# Tradier API configuration
+TRADIER_API_KEY = os.environ.get("TRADIER_API_KEY", "")
+TRADIER_BASE_URL = os.environ.get("TRADIER_BASE_URL", "https://api.tradier.com")

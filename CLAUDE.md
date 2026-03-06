@@ -7,11 +7,13 @@ Real-time web dashboard monitoring unusual options activity (vol > 5x OI) on GLD
 
 **Modular structure:**
 - `app.py` — Flask routes + caching (API: `/api/options?period=1|7|30`)
-- `config.py` — Constants (TICKERS, VOLUME_OI_THRESHOLD=5, FLASK_PORT/FLASK_DEBUG via env vars)
-- `services/options_fetcher.py` — yfinance data + unusual detection
+- `config.py` — Constants (TICKERS, VOLUME_OI_THRESHOLD=5, TRADIER_API_KEY, FLASK_PORT/FLASK_DEBUG via env vars)
+- `services/options_fetcher.py` — Tradier API data + unusual detection
 - `services/snapshot_manager.py` — Save/load daily JSON snapshots
 - `services/analyzer.py` — Aggregate contracts, build heatmaps
-- `public/index.html` — Frontend (vanilla JS, period selector, sortable table)
+- `public/index.html` — Frontend HTML shell
+- `public/css/styles.css` — All styles (CSS variables, components, responsive)
+- `public/js/app.js` — All JS (state, API calls, rendering, sort/filter/period)
 
 **Data flow:**
 1. User clicks 1D/7D/30D
@@ -29,9 +31,17 @@ Real-time web dashboard monitoring unusual options activity (vol > 5x OI) on GLD
 - **Premium**: `volume * lastPrice * 100` (notional; falls back to mid-price if lastPrice is 0)
 - **Safe conversions**: Use `safe_int()` / `safe_float()` for NaN handling
 
+## Environment Variables
+
+- `TRADIER_API_KEY` — API key for Tradier sandbox (required for live data; get free at developer.tradier.com)
+- `FLASK_PORT` — Port for Flask server (default: 5050)
+- `FLASK_DEBUG` — Enable debug mode (default: false)
+- `IS_VERCEL` — Auto-detected on Vercel deployments
+
 ## Running
 
 ```bash
+export TRADIER_API_KEY=your_key_here
 python3 app.py                    # Start at localhost:5050
 curl http://localhost:5050/api/options?period=7
 ```
@@ -74,9 +84,10 @@ curl http://localhost:5050/api/options?period=7 | jq .summary.total_contracts_sc
 
 ## Important Files
 
-- `config.py` — Edit TICKERS, VOLUME_OI_THRESHOLD, CACHE_TTL here
+- `config.py` — Edit TICKERS, VOLUME_OI_THRESHOLD, CACHE_TTL, TRADIER_API_KEY here
 - `data_snapshots/` — Auto-created, stores daily JSON files
 - `services/__init__.py` — Exports main functions for import in app.py
+- `.env.example` — Template for required environment variables
 
 ## API Response Structure
 
@@ -113,7 +124,7 @@ curl http://localhost:5050/api/options?period=7 | jq .summary.total_contracts_sc
 vercel                            # Deploy to Vercel
 ```
 - Vercel auto-detects Flask via `app` object in `app.py`
-- `vercel.json` sets 300s function timeout for yfinance fetches
+- `vercel.json` sets 300s function timeout for Tradier API fetches
 - `IS_VERCEL` env var detected automatically — all periods fetch live data (no snapshots)
 - `public/` served via Vercel CDN automatically
 - Dev dependencies in `requirements-dev.txt`, prod deps in `requirements.txt`
@@ -123,6 +134,6 @@ vercel                            # Deploy to Vercel
 - ✅ Modularized: Each module has single responsibility
 - ✅ Cached: 5-minute TTL per period to avoid redundant API calls
 - ✅ Scalable: Easy to add database, logging, new tickers
-- ⚠️ yfinance fetches live data (slow first request, then cached)
+- ✅ Uses Tradier REST API for reliable options data (`requests` library)
 - ⚠️ Historical periods only grow as new days accumulate (snapshots auto-saved daily)
 - ⚠️ On Vercel: 7D/30D buttons return live data (same as 1D) since snapshots don't persist

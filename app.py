@@ -1,5 +1,8 @@
 """Flask application for unusual options activity tracker."""
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, redirect, send_from_directory, request
 import logging
 import time

@@ -1,8 +1,8 @@
-"""Module for fetching options data from yfinance."""
+"""Module for fetching options data from Tradier API."""
 
-import yfinance as yf
+import requests
 import math
-from config import TICKERS, VOLUME_OI_THRESHOLD
+from config import TICKERS, VOLUME_OI_THRESHOLD, TRADIER_API_KEY, TRADIER_BASE_URL
 
 
 def safe_int(val):
@@ -19,37 +19,98 @@ def safe_float(val):
     return float(val)
 
 
+def _get_spot_price(symbol, headers):
+    """Fetch current spot price for a ticker via Tradier quotes endpoint."""
+    try:
+        resp = requests.get(
+            f"{TRADIER_BASE_URL}/v1/markets/quotes",
+            headers=headers,
+            params={"symbols": symbol},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        quote = resp.json().get("quotes", {}).get("quote", {})
+        return safe_float(quote.get("last") or quote.get("prevclose", 0))
+    except Exception:
+        return 0.0
+
+
+def _get_expirations(symbol, headers):
+    """Fetch available option expiration dates for a ticker."""
+    try:
+        resp = requests.get(
+            f"{TRADIER_BASE_URL}/v1/markets/options/expirations",
+            headers=headers,
+            params={"symbol": symbol},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        dates = resp.json().get("expirations", {}).get("date", [])
+        return dates if isinstance(dates, list) else [dates]
+    except Exception:
+        return []
+
+
 def fetch_options_data():
-    """Fetch options chains for configured tickers and flag unusual activity.
+    """Fetch options chains for configured tickers via Tradier API and flag unusual activity.
 
     Returns:
         list: List of contract dictionaries with analysis
     """
     all_contracts = []
 
+    headers = {
+        "Authorization": f"Bearer {TRADIER_API_KEY}",
+        "Accept": "application/json",
+    }
+
     for symbol in TICKERS:
-        ticker = yf.Ticker(symbol)
-        spot_price = safe_float(
-            ticker.info.get("regularMarketPrice")
-            or ticker.info.get("previousClose", 0)
-        )
-        expirations = ticker.options
+        spot_price = _get_spot_price(symbol, headers)
+        expirations = _get_expirations(symbol, headers)
 
         for exp in expirations:
             try:
-                chain = ticker.option_chain(exp)
+                resp = requests.get(
+                    f"{TRADIER_BASE_URL}/v1/markets/options/chains",
+                    headers=headers,
+                    params={
+                        "symbol": symbol,
+                        "expiration": exp,
+                        "greeks": "true",
+                    },
+                    timeout=15,
+                )
+                resp.raise_for_status()
+                data = resp.json()
             except Exception:
                 continue
 
-            for opt_type, df in [("call", chain.calls), ("put", chain.puts)]:
-                if df.empty:
+            options = data.get("options", {}).get("option", [])
+            if not isinstance(options, list):
+                options = [options] if options else []
+
+            for opt in options:
+                opt_type = opt.get("option_type", "").lower()
+                if opt_type not in ("call", "put"):
                     continue
 
-                for _, row in df.iterrows():
-                    contract = _parse_option_row(
-                        row, symbol, exp, opt_type, spot_price
-                    )
-                    all_contracts.append(contract)
+                greeks = opt.get("greeks") or {}
+                iv = safe_float(greeks.get("mid_iv") or greeks.get("smv_vol", 0))
+
+                row = {
+                    "volume": opt.get("volume"),
+                    "openInterest": opt.get("open_interest"),
+                    "strike": opt.get("strike"),
+                    "lastPrice": opt.get("last"),
+                    "bid": opt.get("bid"),
+                    "ask": opt.get("ask"),
+                    "impliedVolatility": iv,
+                }
+
+                contract = _parse_option_row(
+                    row, symbol, exp, opt_type, spot_price
+                )
+                all_contracts.append(contract)
 
     return all_contracts
 
@@ -58,7 +119,7 @@ def _parse_option_row(row, symbol, expiration, opt_type, spot_price):
     """Parse a single options row and extract analysis.
 
     Args:
-        row: pandas Series representing one option contract
+        row: Dict-like object with option contract fields
         symbol: Ticker symbol (e.g., 'GLD', 'SLV')
         expiration: Expiration date string
         opt_type: 'call' or 'put'
