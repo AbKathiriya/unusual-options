@@ -2,7 +2,7 @@
 
 import requests
 import math
-from config import TICKERS, VOLUME_OI_THRESHOLD, TRADIER_API_KEY, TRADIER_BASE_URL
+from config import TICKERS, VOLUME_OI_THRESHOLD, TRADIER_API_KEY, TRADIER_BASE_URL, MAX_EXPIRATIONS
 
 
 def safe_int(val):
@@ -66,7 +66,7 @@ def fetch_options_data():
 
     for symbol in TICKERS:
         spot_price = _get_spot_price(symbol, headers)
-        expirations = _get_expirations(symbol, headers)
+        expirations = _get_expirations(symbol, headers)[:MAX_EXPIRATIONS]
 
         for exp in expirations:
             try:
