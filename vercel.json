@@ -1,8 +1,3 @@
 {
-  "regions": ["iad1"],
-  "functions": {
-    "app.py": {
-      "maxDuration": 300
-    }
-  }
+  "regions": ["iad1"]
 }
