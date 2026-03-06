@@ -2,7 +2,10 @@
 
 import requests
 import math
+import logging
 from config import TICKERS, VOLUME_OI_THRESHOLD, TRADIER_API_KEY, TRADIER_BASE_URL, MAX_EXPIRATIONS
+
+logger = logging.getLogger(__name__)
 
 
 def safe_int(val):
@@ -31,7 +34,8 @@ def _get_spot_price(symbol, headers):
         resp.raise_for_status()
         quote = resp.json().get("quotes", {}).get("quote", {})
         return safe_float(quote.get("last") or quote.get("prevclose", 0))
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to get spot price for {symbol}: {e}")
         return 0.0
 
 
@@ -47,7 +51,8 @@ def _get_expirations(symbol, headers):
         resp.raise_for_status()
         dates = resp.json().get("expirations", {}).get("date", [])
         return dates if isinstance(dates, list) else [dates]
-    except Exception:
+    except Exception as e:
+        logger.error(f"Failed to get expirations for {symbol}: {e}")
         return []
 
 

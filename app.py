@@ -122,6 +122,7 @@ def get_options():
     return jsonify(get_options_data(period))
 
 
+
 if __name__ == "__main__":
     os.makedirs("public", exist_ok=True)
     app.run(debug=FLASK_DEBUG, port=FLASK_PORT)
